@@ -9,7 +9,7 @@ it('can instantiate a belongs to many with pivot loading relationship', function
     $model = new User;
     $model->setAttribute($model->getKeyName(), 1);
 
-    $relation = $model->belongsToManyPublic(
+    $relation = $model->belongsToMany(
         Role::class,
         'pivot_table',
         'foreign_key',
@@ -26,7 +26,7 @@ it('can instantiate a morph to many with pivot loading relationship', function (
     $model = new User;
     $model->setAttribute($model->getKeyName(), 1);
 
-    $relation = $model->morphToManyPublic(
+    $relation = $model->morphToMany(
         Role::class,
         'taggable',
         'taggables',
@@ -45,7 +45,7 @@ it('can instantiate a morphed by many with pivot loading relationship', function
     $model = new User;
     $model->setAttribute($model->getKeyName(), 1);
 
-    $relation = $model->morphedByManyPublic(
+    $relation = $model->morphedByMany(
         Role::class,
         'taggable',
         'taggables',
@@ -64,7 +64,7 @@ it('can chain withPivotRelations on belongsToMany', function () {
     $model = new User;
     $model->setAttribute($model->getKeyName(), 1);
 
-    $relation = $model->belongsToManyPublic(Role::class);
+    $relation = $model->belongsToMany(Role::class);
     $relation->withPivotRelations(['foo', 'bar']);
 
     $reflection = new ReflectionClass($relation);
@@ -78,7 +78,7 @@ it('can chain withPivotRelations on morphToMany', function () {
     $model = new User;
     $model->setAttribute($model->getKeyName(), 1);
 
-    $relation = $model->morphToManyPublic(Role::class, 'taggable');
+    $relation = $model->morphToMany(Role::class, 'taggable');
     $relation->withPivotRelations('baz');
 
     $reflection = new ReflectionClass($relation);

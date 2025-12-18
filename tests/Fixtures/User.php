@@ -7,16 +7,7 @@ use LaravelPivotRelationsEagerLoading\Concerns\WithPivotRelationsLoading;
 
 class User extends Model
 {
-    /**
-     * The following methods are changed from protected to public
-     * so they can be accessed in tests. you should not do this in your
-     * own models. just `use WithPivotRelationsLoading;` is enough.
-     */
-    use WithPivotRelationsLoading {
-        belongsToMany as public belongsToManyPublic;
-        morphToMany as public morphToManyPublic;
-        morphedByMany as public morphedByManyPublic;
-    }
+    use WithPivotRelationsLoading;
 
     protected $guarded = [];
 

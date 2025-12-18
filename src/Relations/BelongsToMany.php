@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace LaravelPivotRelationsEagerLoading\Relations;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany as BaseBelongsToMany;
-use Illuminate\Support\Arr;
 use Illuminate\Support\LazyCollection;
 
 class BelongsToMany extends BaseBelongsToMany

@@ -185,8 +185,8 @@ it('eager loads pivot relations when using lazy()', function () {
 
     $first = $loadedUser->rolesWithCreatorPivotRelation()->lazy()->first();
 
-    expect($first)->not()->toBeNull();
-    expect($first->pivot->relationLoaded('creator'))->toBeTrue()
+    expect($first)->not()->toBeNull()
+        ->and($first->pivot->relationLoaded('creator'))->toBeTrue()
         ->and($first->pivot->creator->id)->toBe($creator->id);
 });
 
@@ -201,8 +201,8 @@ it('eager loads pivot relations when using cursor()', function () {
 
     $first = $loadedUser->rolesWithCreatorPivotRelation()->cursor()->first();
 
-    expect($first)->not()->toBeNull();
-    expect($first->pivot->relationLoaded('creator'))->toBeTrue()
+    expect($first)->not()->toBeNull()
+        ->and($first->pivot->relationLoaded('creator'))->toBeTrue()
         ->and($first->pivot->creator->id)->toBe($creator->id);
 });
 
@@ -215,8 +215,8 @@ it('eager loads pivot relations for morphToMany when using cursor()', function (
 
     $first = $user->tags()->cursor()->first();
 
-    expect($first)->not()->toBeNull();
-    expect($first->pivot->relationLoaded('creator'))->toBeTrue()
+    expect($first)->not()->toBeNull()
+        ->and($first->pivot->relationLoaded('creator'))->toBeTrue()
         ->and($first->pivot->creator->id)->toBe($creator->id);
 });
 
