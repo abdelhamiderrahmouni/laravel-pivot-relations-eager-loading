@@ -152,3 +152,70 @@ it('can eager load pivot relations on morphed by many', function () {
         ->and($pivot->creator->id)->toBe($creator->id);
 });
 
+it('eager loads pivot relations when using chunk()', function () {
+    $creator = User::create(['name' => 'Creator']);
+    $user = User::create(['name' => 'User']);
+    $role = Role::create(['name' => 'Admin']);
+
+    $user->rolesWithCreatorPivotRelation()->attach($role, ['created_by' => $creator->id]);
+
+    $loadedUser = User::find($user->id);
+
+    $seen = 0;
+
+    $loadedUser->rolesWithCreatorPivotRelation()->chunk(1, function ($roles) use (&$seen, $creator) {
+        foreach ($roles as $role) {
+            $seen++;
+            expect($role->pivot->relationLoaded('creator'))->toBeTrue()
+                ->and($role->pivot->creator->id)->toBe($creator->id);
+        }
+    });
+
+    expect($seen)->toBe(1);
+});
+
+it('eager loads pivot relations when using lazy()', function () {
+    $creator = User::create(['name' => 'Creator']);
+    $user = User::create(['name' => 'User']);
+    $role = Role::create(['name' => 'Admin']);
+
+    $user->rolesWithCreatorPivotRelation()->attach($role, ['created_by' => $creator->id]);
+
+    $loadedUser = User::find($user->id);
+
+    $first = $loadedUser->rolesWithCreatorPivotRelation()->lazy()->first();
+
+    expect($first)->not()->toBeNull();
+    expect($first->pivot->relationLoaded('creator'))->toBeTrue()
+        ->and($first->pivot->creator->id)->toBe($creator->id);
+});
+
+it('eager loads pivot relations when using cursor()', function () {
+    $creator = User::create(['name' => 'Creator']);
+    $user = User::create(['name' => 'User']);
+    $role = Role::create(['name' => 'Admin']);
+
+    $user->rolesWithCreatorPivotRelation()->attach($role, ['created_by' => $creator->id]);
+
+    $loadedUser = User::find($user->id);
+
+    $first = $loadedUser->rolesWithCreatorPivotRelation()->cursor()->first();
+
+    expect($first)->not()->toBeNull();
+    expect($first->pivot->relationLoaded('creator'))->toBeTrue()
+        ->and($first->pivot->creator->id)->toBe($creator->id);
+});
+
+it('eager loads pivot relations for morphToMany when using cursor()', function () {
+    $creator = User::create(['name' => 'Creator']);
+    $user = User::create(['name' => 'User']);
+    $tag = Tag::create(['name' => 'Laravel']);
+
+    $user->tags()->attach($tag, ['created_by' => $creator->id]);
+
+    $first = $user->tags()->cursor()->first();
+
+    expect($first)->not()->toBeNull();
+    expect($first->pivot->relationLoaded('creator'))->toBeTrue()
+        ->and($first->pivot->creator->id)->toBe($creator->id);
+});
