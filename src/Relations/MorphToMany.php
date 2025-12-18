@@ -24,7 +24,13 @@ class MorphToMany extends BaseMorphToMany
 
     public function get($columns = ['*'])
     {
+        $pivotEagerLoad = $this->extractPivotEagerLoads();
+
         $results = parent::get($columns);
+
+        if (! empty($pivotEagerLoad)) {
+            $this->eagerLoadPivotRelations($results, $pivotEagerLoad);
+        }
 
         $this->loadPivotRelationsOnModels($results);
 
@@ -36,12 +42,20 @@ class MorphToMany extends BaseMorphToMany
      */
     public function chunk($count, callable $callback)
     {
-        if (empty($this->pivotWith)) {
+        $pivotEagerLoad = $this->extractPivotEagerLoads();
+
+        if (empty($this->pivotWith) && empty($pivotEagerLoad)) {
             return parent::chunk($count, $callback);
         }
 
-        return parent::chunk($count, function ($results) use ($callback) {
-            $this->loadPivotRelationsOnModels($results);
+        return parent::chunk($count, function ($results) use ($callback, $pivotEagerLoad) {
+            if (! empty($pivotEagerLoad)) {
+                $this->eagerLoadPivotRelations($results, $pivotEagerLoad);
+            }
+
+            if (! empty($this->pivotWith)) {
+                $this->loadPivotRelationsOnModels($results);
+            }
 
             return $callback($results);
         });
@@ -52,14 +66,22 @@ class MorphToMany extends BaseMorphToMany
      */
     public function lazy($chunkSize = 1000): LazyCollection
     {
+        $pivotEagerLoad = $this->extractPivotEagerLoads();
+
         $lazy = parent::lazy($chunkSize);
 
-        if (empty($this->pivotWith)) {
+        if (empty($this->pivotWith) && empty($pivotEagerLoad)) {
             return $lazy;
         }
 
-        return $lazy->chunk($chunkSize)->flatMap(function ($models) {
-            $this->loadPivotRelationsOnModels($models);
+        return $lazy->chunk($chunkSize)->flatMap(function ($models) use ($pivotEagerLoad) {
+            if (! empty($pivotEagerLoad)) {
+                $this->eagerLoadPivotRelations($models, $pivotEagerLoad);
+            }
+
+            if (! empty($this->pivotWith)) {
+                $this->loadPivotRelationsOnModels($models);
+            }
 
             return $models;
         });
@@ -70,23 +92,90 @@ class MorphToMany extends BaseMorphToMany
      */
     public function cursor(): LazyCollection
     {
+        $pivotEagerLoad = $this->extractPivotEagerLoads();
+
         $cursor = parent::cursor();
 
-        if (empty($this->pivotWith)) {
+        if (empty($this->pivotWith) && empty($pivotEagerLoad)) {
             return $cursor;
         }
 
         $batchSize = 1000;
 
-        return $cursor->chunk($batchSize)->flatMap(function ($models) {
-            $this->loadPivotRelationsOnModels($models);
+        return $cursor->chunk($batchSize)->flatMap(function ($models) use ($pivotEagerLoad) {
+            if (! empty($pivotEagerLoad)) {
+                $this->eagerLoadPivotRelations($models, $pivotEagerLoad);
+            }
+
+            if (! empty($this->pivotWith)) {
+                $this->loadPivotRelationsOnModels($models);
+            }
 
             return $models;
         });
     }
 
     /**
-     * Load configured pivot relations for a set of models.
+     * Extract pivot eager loads (alias.*) from the relation builder and remove them.
+     *
+     * @return array<string, callable|null>
+     */
+    protected function extractPivotEagerLoads(): array
+    {
+        $eagerLoads = $this->query->getEagerLoads();
+        if (empty($eagerLoads)) {
+            return [];
+        }
+
+        $prefix = $this->accessor . '.'; // respects ->as()
+
+        $pivotEagerLoad = [];
+        foreach ($eagerLoads as $name => $constraints) {
+            if (is_string($name) && str_starts_with($name, $prefix)) {
+                $pivotEagerLoad[$name] = $constraints;
+            }
+        }
+
+        if (! empty($pivotEagerLoad)) {
+            $this->query->without(array_merge([$this->accessor], array_keys($pivotEagerLoad)));
+        } else {
+            $this->query->without([$this->accessor]);
+        }
+
+        $stripped = [];
+        $offset = strlen($prefix);
+        foreach ($pivotEagerLoad as $name => $constraints) {
+            $stripped[substr($name, $offset)] = $constraints;
+        }
+
+        return $stripped;
+    }
+
+    /**
+     * Eager load the specified relations on the pivot models.
+     *
+     * @param  iterable  $models
+     * @param  array<string, callable|null>  $eagerLoad
+     * @return void
+     */
+    protected function eagerLoadPivotRelations($models, array $eagerLoad): void
+    {
+        $models = collect($models);
+        if ($models->isEmpty()) {
+            return;
+        }
+
+        $pivots = $models->pluck($this->accessor)->filter();
+        if ($pivots->isEmpty()) {
+            return;
+        }
+
+        $builder = $pivots->first()->query();
+        $builder->with($eagerLoad)->eagerLoadRelations($pivots->all());
+    }
+
+    /**
+     * Load configured pivot relations for a set of models using withPivotRelations().
      *
      * @param  iterable  $models
      */
@@ -102,7 +191,7 @@ class MorphToMany extends BaseMorphToMany
             return;
         }
 
-        $pivots = $models->pluck('pivot')->filter();
+        $pivots = $models->pluck($this->accessor)->filter();
 
         if ($pivots->isNotEmpty()) {
             $pivots->first()

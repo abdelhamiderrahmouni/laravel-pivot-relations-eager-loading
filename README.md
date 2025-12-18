@@ -132,6 +132,41 @@ public function posts(): MorphToMany
 }
 ```
 
+## Alternative syntax: eager-load via pivot.* (supports custom alias via ->as())
+
+If you prefer to declare pivot relations directly in the eager-load list, you can use the `pivot.*` syntax (or your custom alias if you renamed the pivot using `->as('alias')`). This works for both `BelongsToMany` and `MorphToMany`:
+
+```php
+// BelongsToMany example
+User::query()
+    ->with([
+        'skills',
+        // Eager-load pivot relation using pivot.* syntax
+        'skills.pivot.scale',
+    ])
+    ->get();
+
+// If you changed the pivot accessor using ->as('meta')
+User::query()
+    ->with([
+        'skills',
+        'skills.meta.scale', // uses the custom alias instead of "pivot"
+    ])
+    ->get();
+
+// MorphToMany example
+Post::query()
+    ->with([
+        'tags',
+        'tags.pivot.creator',
+    ])
+    ->get();
+```
+
+Notes:
+- The package automatically detects and strips `pivot.*` (or `alias.*`) from the relation eager-loads and loads those relations on the pivot models. This avoids `RelationNotFoundException` on the related model.
+- You can keep using `withPivotRelations([...])` if you prefer an explicit API; both forms are supported and can be combined.
+
 ## Available Classes
 
 If you prefer, the package provides convenience classes as return types that simply extend Laravel's native relations:

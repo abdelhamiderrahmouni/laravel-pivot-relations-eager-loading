@@ -4,14 +4,26 @@ declare(strict_types=1);
 
 namespace LaravelPivotRelationsEagerLoading\Concerns;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use LaravelPivotRelationsEagerLoading\Relations\BelongsToMany;
 use LaravelPivotRelationsEagerLoading\Relations\MorphToMany;
 
 trait WithPivotRelationsLoading
 {
     /**
-     * @param  class-string<Model>  $related
+     * Define a many-to-many relationship.
+     * Mirrors Eloquent's belongsToMany but relies on our overridden factory.
+     *
+     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $related
+     * @param  string|class-string<\Illuminate\Database\Eloquent\Model>|null  $table
+     * @param  string|null  $foreignPivotKey
+     * @param  string|null  $relatedPivotKey
+     * @param  string|null  $parentKey
+     * @param  string|null  $relatedKey
+     * @param  string|null  $relation
+     * @return \LaravelPivotRelationsEagerLoading\Relations\BelongsToMany
      */
     public function belongsToMany(
         $related,
@@ -22,9 +34,6 @@ trait WithPivotRelationsLoading
         $relatedKey = null,
         $relation = null,
     ): BelongsToMany {
-        // If no relation name was given, we will use this debug backtrace to extract
-        // the calling method's name and use that as the relationship name as most
-        // of the time this will be what we desire to use for the relationships.
         if (is_null($relation)) {
             $relation = $this->guessBelongsToManyRelation();
         }
@@ -32,17 +41,13 @@ trait WithPivotRelationsLoading
         $instance = $this->newRelatedInstance($related);
 
         $foreignPivotKey = $foreignPivotKey ?: $this->getForeignKey();
-
         $relatedPivotKey = $relatedPivotKey ?: $instance->getForeignKey();
 
-        // If no table name was provided, we will guess it by concatenating the two
-        // models using underscores in alphabetical order. The two model names
-        // are transformed to snake case from their default CamelCase also.
         if (is_null($table)) {
             $table = $this->joiningTable($related, $instance);
         }
 
-        return new BelongsToMany(
+        return $this->newBelongsToMany(
             $instance->newQuery(),
             $this,
             $table,
@@ -50,12 +55,24 @@ trait WithPivotRelationsLoading
             $relatedPivotKey,
             $parentKey ?: $this->getKeyName(),
             $relatedKey ?: $instance->getKeyName(),
-            $relation
+            $relation,
         );
     }
 
     /**
-     * @param  class-string<Model>  $related
+     * Define a polymorphic many-to-many relationship.
+     * Mirrors Eloquent's morphToMany but relies on our overridden factory.
+     *
+     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $related
+     * @param  string  $name
+     * @param  string|null  $table
+     * @param  string|null  $foreignPivotKey
+     * @param  string|null  $relatedPivotKey
+     * @param  string|null  $parentKey
+     * @param  string|null  $relatedKey
+     * @param  string|null  $relation
+     * @param  bool  $inverse
+     * @return \LaravelPivotRelationsEagerLoading\Relations\MorphToMany
      */
     public function morphToMany(
         $related,
@@ -73,18 +90,15 @@ trait WithPivotRelationsLoading
         $instance = $this->newRelatedInstance($related);
 
         $foreignPivotKey = $foreignPivotKey ?: $name.'_id';
-
         $relatedPivotKey = $relatedPivotKey ?: $instance->getForeignKey();
 
         if (! $table) {
             $words = preg_split('/(_)/u', $name, -1, PREG_SPLIT_DELIM_CAPTURE);
-
             $lastWord = array_pop($words);
-
-            $table = implode('', $words).\Illuminate\Support\Str::plural($lastWord);
+            $table = implode('', $words).Str::plural($lastWord);
         }
 
-        return new MorphToMany(
+        return $this->newMorphToMany(
             $instance->newQuery(),
             $this,
             $name,
@@ -99,7 +113,18 @@ trait WithPivotRelationsLoading
     }
 
     /**
-     * @param  class-string<Model>  $related
+     * Define a polymorphic, inverse many-to-many relationship.
+     * Mirrors Eloquent's morphedByMany but reuses morphToMany and our factory.
+     *
+     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $related
+     * @param  string  $name
+     * @param  string|null  $table
+     * @param  string|null  $foreignPivotKey
+     * @param  string|null  $relatedPivotKey
+     * @param  string|null  $parentKey
+     * @param  string|null  $relatedKey
+     * @param  string|null  $relation
+     * @return \LaravelPivotRelationsEagerLoading\Relations\MorphToMany
      */
     public function morphedByMany(
         $related,
@@ -112,7 +137,6 @@ trait WithPivotRelationsLoading
         $relation = null,
     ): MorphToMany {
         $foreignPivotKey = $foreignPivotKey ?: $this->getForeignKey();
-
         $relatedPivotKey = $relatedPivotKey ?: $name.'_id';
 
         return $this->morphToMany(
@@ -124,8 +148,85 @@ trait WithPivotRelationsLoading
             $parentKey,
             $relatedKey,
             $relation,
-            inverse: true,
+            true,
+        );
+    }
+
+    /**
+     * Instantiate a new BelongsToMany relationship, returning the package's
+     * custom relation that supports eager loading of pivot relations.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  \Illuminate\Database\Eloquent\Model  $parent
+     * @param  string|class-string<\Illuminate\Database\Eloquent\Model>  $table
+     * @param  string  $foreignPivotKey
+     * @param  string  $relatedPivotKey
+     * @param  string  $parentKey
+     * @param  string  $relatedKey
+     * @param  string|null  $relationName
+     * @return \LaravelPivotRelationsEagerLoading\Relations\BelongsToMany
+     */
+    protected function newBelongsToMany(
+        Builder $query,
+        Model $parent,
+        $table,
+        $foreignPivotKey,
+        $relatedPivotKey,
+        $parentKey,
+        $relatedKey,
+        $relationName = null,
+    ): BelongsToMany {
+        return new BelongsToMany(
+            $query,
+            $parent,
+            $table,
+            $foreignPivotKey,
+            $relatedPivotKey,
+            $parentKey,
+            $relatedKey,
+            $relationName,
+        );
+    }
+
+    /**
+     * Instantiate a new MorphToMany relationship, returning the package's
+     * custom relation that supports eager loading of pivot relations.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  \Illuminate\Database\Eloquent\Model  $parent
+     * @param  string  $name
+     * @param  string  $table
+     * @param  string  $foreignPivotKey
+     * @param  string  $relatedPivotKey
+     * @param  string  $parentKey
+     * @param  string  $relatedKey
+     * @param  string|null  $relationName
+     * @param  bool  $inverse
+     * @return \LaravelPivotRelationsEagerLoading\Relations\MorphToMany
+     */
+    protected function newMorphToMany(
+        Builder $query,
+        Model $parent,
+        $name,
+        $table,
+        $foreignPivotKey,
+        $relatedPivotKey,
+        $parentKey,
+        $relatedKey,
+        $relationName = null,
+        $inverse = false,
+    ): MorphToMany {
+        return new MorphToMany(
+            $query,
+            $parent,
+            $name,
+            $table,
+            $foreignPivotKey,
+            $relatedPivotKey,
+            $parentKey,
+            $relatedKey,
+            $relationName,
+            $inverse,
         );
     }
 }
-

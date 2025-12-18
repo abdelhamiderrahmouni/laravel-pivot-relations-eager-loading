@@ -219,3 +219,38 @@ it('eager loads pivot relations for morphToMany when using cursor()', function (
     expect($first->pivot->relationLoaded('creator'))->toBeTrue()
         ->and($first->pivot->creator->id)->toBe($creator->id);
 });
+
+it('supports pivot.* eager-load syntax on BelongsToMany', function () {
+    $creator = User::create(['name' => 'Creator']);
+    $user = User::create(['name' => 'User']);
+    $role = Role::create(['name' => 'Admin']);
+
+    $user->roles()->attach($role, ['created_by' => $creator->id]);
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    $loadedUser = User::query()->with(['roles', 'roles.pivot.creator'])->find($user->id);
+
+    $queries = DB::getQueryLog();
+    expect(count($queries))->toBe(3);
+
+    $pivot = $loadedUser->roles->first()->pivot;
+    expect($pivot->relationLoaded('creator'))->toBeTrue()
+        ->and($pivot->creator->id)->toBe($creator->id);
+});
+
+it('supports custom alias via ->as() for pivot.* syntax', function () {
+    $creator = User::create(['name' => 'Creator']);
+    $user = User::create(['name' => 'User']);
+    $role = Role::create(['name' => 'Admin']);
+
+    $user->rolesAliased()->attach($role, ['created_by' => $creator->id]);
+
+    $loadedUser = User::query()->with(['rolesAliased', 'rolesAliased.meta.creator'])->find($user->id);
+
+    $pivot = $loadedUser->rolesAliased->first()->meta; // alias is respected
+    expect($pivot->relationLoaded('creator'))->toBeTrue()
+        ->and($pivot->creator->id)->toBe($creator->id);
+});
+

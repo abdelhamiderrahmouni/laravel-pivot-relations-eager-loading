@@ -42,4 +42,12 @@ class User extends Model
             ->withPivot('created_by')
             ->withPivotRelations('creator');
     }
+
+    public function rolesAliased()
+    {
+        return $this->belongsToMany(Role::class, 'role_user')
+            ->using(RoleUser::class)
+            ->as('meta')
+            ->withPivot('created_by');
+    }
 }
