@@ -1,0 +1,7 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Trait LaravelPivotRelationsEagerLoading\\Concerns\\HasBelongsToManyWithPivotLoading is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Database/Eloquent/Concerns/HasBelongsToManyWithPivotLoading.php
