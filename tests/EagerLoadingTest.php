@@ -2,8 +2,8 @@
 
 use Illuminate\Support\Facades\DB;
 use LaravelPivotRelationsEagerLoading\Tests\Fixtures\Role;
-use LaravelPivotRelationsEagerLoading\Tests\Fixtures\User;
 use LaravelPivotRelationsEagerLoading\Tests\Fixtures\Tag;
+use LaravelPivotRelationsEagerLoading\Tests\Fixtures\User;
 
 it('can eager load pivot relations', function () {
     $creator = User::create(['name' => 'Creator']);
@@ -253,4 +253,3 @@ it('supports custom alias via ->as() for pivot.* syntax', function () {
     expect($pivot->relationLoaded('creator'))->toBeTrue()
         ->and($pivot->creator->id)->toBe($creator->id);
 });
-

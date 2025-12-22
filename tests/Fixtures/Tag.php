@@ -8,6 +8,7 @@ use LaravelPivotRelationsEagerLoading\Concerns\WithPivotRelationsLoading;
 class Tag extends Model
 {
     use WithPivotRelationsLoading;
+
     protected $guarded = [];
 
     public function users()
@@ -18,4 +19,3 @@ class Tag extends Model
             ->withPivotRelations('creator');
     }
 }
-

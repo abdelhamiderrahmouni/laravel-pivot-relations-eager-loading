@@ -13,4 +13,3 @@ class Taggable extends MorphPivot
         return $this->belongsTo(User::class, 'created_by');
     }
 }
-

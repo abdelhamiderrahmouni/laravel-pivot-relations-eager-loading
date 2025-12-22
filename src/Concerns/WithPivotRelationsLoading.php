@@ -6,7 +6,6 @@ namespace LaravelPivotRelationsEagerLoading\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 use LaravelPivotRelationsEagerLoading\Relations\BelongsToMany;
 use LaravelPivotRelationsEagerLoading\Relations\MorphToMany;
 
@@ -16,15 +15,12 @@ trait WithPivotRelationsLoading
      * Instantiate a new BelongsToMany relationship, returning the package's
      * custom relation that supports eager loading of pivot relations.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @param  \Illuminate\Database\Eloquent\Model  $parent
      * @param  string|class-string<\Illuminate\Database\Eloquent\Model>  $table
      * @param  string  $foreignPivotKey
      * @param  string  $relatedPivotKey
      * @param  string  $parentKey
      * @param  string  $relatedKey
      * @param  string|null  $relationName
-     * @return \LaravelPivotRelationsEagerLoading\Relations\BelongsToMany
      */
     protected function newBelongsToMany(
         Builder $query,
@@ -52,8 +48,6 @@ trait WithPivotRelationsLoading
      * Instantiate a new MorphToMany relationship, returning the package's
      * custom relation that supports eager loading of pivot relations.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @param  \Illuminate\Database\Eloquent\Model  $parent
      * @param  string  $name
      * @param  string  $table
      * @param  string  $foreignPivotKey
@@ -62,7 +56,6 @@ trait WithPivotRelationsLoading
      * @param  string  $relatedKey
      * @param  string|null  $relationName
      * @param  bool  $inverse
-     * @return \LaravelPivotRelationsEagerLoading\Relations\MorphToMany
      */
     protected function newMorphToMany(
         Builder $query,

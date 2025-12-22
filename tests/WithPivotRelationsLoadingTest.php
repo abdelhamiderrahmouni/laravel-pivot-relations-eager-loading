@@ -87,4 +87,3 @@ it('can chain withPivotRelations on morphToMany', function () {
 
     expect($property->getValue($relation))->toBe(['baz']);
 });
-

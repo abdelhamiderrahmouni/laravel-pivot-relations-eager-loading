@@ -127,7 +127,7 @@ class MorphToMany extends BaseMorphToMany
             return [];
         }
 
-        $prefix = $this->accessor . '.'; // respects ->as()
+        $prefix = $this->accessor.'.'; // respects ->as()
 
         $pivotEagerLoad = [];
         foreach ($eagerLoads as $name => $constraints) {
@@ -156,7 +156,6 @@ class MorphToMany extends BaseMorphToMany
      *
      * @param  iterable  $models
      * @param  array<string, callable|null>  $eagerLoad
-     * @return void
      */
     protected function eagerLoadPivotRelations($models, array $eagerLoad): void
     {

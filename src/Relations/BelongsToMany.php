@@ -135,7 +135,7 @@ class BelongsToMany extends BaseBelongsToMany
             return [];
         }
 
-        $prefix = $this->accessor . '.'; // respects custom alias set via ->as()
+        $prefix = $this->accessor.'.'; // respects custom alias set via ->as()
 
         $pivotEagerLoad = [];
         foreach ($eagerLoads as $name => $constraints) {
@@ -167,7 +167,6 @@ class BelongsToMany extends BaseBelongsToMany
      *
      * @param  iterable  $models
      * @param  array<string, callable|null>  $eagerLoad
-     * @return void
      */
     protected function eagerLoadPivotRelations($models, array $eagerLoad): void
     {
@@ -188,7 +187,7 @@ class BelongsToMany extends BaseBelongsToMany
     /**
      * Load configured pivot relations for a set of models using withPivotRelations().
      *
-     * @param iterable $models
+     * @param  iterable  $models
      */
     protected function loadPivotRelationsOnModels($models): void
     {
