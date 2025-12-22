@@ -18,7 +18,9 @@ Illuminate\Database\Eloquent\RelationNotFoundException: Call to undefined relati
 
 ## Solution
 
-This package provides custom relationship classes that extend Laravel's `BelongsToMany` and `MorphToMany` relationships, adding support for eager loading pivot relationships via a `withPivotRelations()` method.
+This package provides custom relationship classes that extend Laravel's `BelongsToMany` and `MorphToMany` relationships, adding support for eager loading pivot relationships natively using `->with('roles.pivot.createdBy')` as well as via a `withPivotRelations('createdBy')` method.
+
+This package supports the `get()`, `lazy()`, `cursor()`, and `chunk()` methods.
 
 ## Installation
 
@@ -29,7 +31,7 @@ composer require abdelhamiderrahmouni/laravel-pivot-relations-eager-loading
 ## Usage
 
 ### 1. Create a Custom Pivot Model
-
+Make sure to define your relationships on your custom pivot model:
 ```php
 <?php
 
@@ -51,8 +53,45 @@ class UserSkill extends Pivot
 }
 ```
 
-### 2. Add the Trait to Your Model
+### 2. Add the Trait to Your Models
 
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use LaravelPivotRelationsEagerLoading\Concerns\WithPivotRelationsLoading;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Model;
+
+class User extends Model
+{
+    use WithPivotRelationsLoading;
+
+    public function skills(): BelongsToMany
+    {
+        return $this->belongsToMany(Skill::class, 'user_skill')
+            ->using(UserSkill::class)
+            ->withTimestamps()
+            ->withPivot(['scale_id']);
+    }
+}
+```
+
+```php
+$users = User::query()->with('skills.pivot.scale')->get();
+
+foreach ($users as $user) {
+    foreach ($user->skills as $skill) {
+        // The scale relationship is already loaded - no N+1 queries!
+        $scale = $skill->pivot->scale;
+    }
+}
+```
+
+If you prefer to always eager load a pivot relationship with your relationship definition, you can use the `withPivotRelations()` method:
 ```php
 <?php
 
@@ -132,76 +171,18 @@ public function posts(): MorphToMany
 }
 ```
 
-## Alternative syntax: eager-load via pivot.* (supports custom alias via ->as())
-
-If you prefer to declare pivot relations directly in the eager-load list, you can use the `pivot.*` syntax (or your custom alias if you renamed the pivot using `->as('alias')`). This works for both `BelongsToMany` and `MorphToMany`:
-
-```php
-// BelongsToMany example
-User::query()
-    ->with([
-        'skills',
-        // Eager-load pivot relation using pivot.* syntax
-        'skills.pivot.scale',
-    ])
-    ->get();
-
-// If you changed the pivot accessor using ->as('meta')
-User::query()
-    ->with([
-        'skills',
-        'skills.meta.scale', // uses the custom alias instead of "pivot"
-    ])
-    ->get();
-
-// MorphToMany example
-Post::query()
-    ->with([
-        'tags',
-        'tags.pivot.creator',
-    ])
-    ->get();
-```
-
-Notes:
+## Notes:
 - The package automatically detects and strips `pivot.*` (or `alias.*`) from the relation eager-loads and loads those relations on the pivot models. This avoids `RelationNotFoundException` on the related model.
-- You can keep using `withPivotRelations([...])` if you prefer an explicit API; both forms are supported and can be combined.
+- You can use `withPivotRelations([...])` if you prefer an explicit API; both forms are supported and can be combined.
 
 ## Available Classes
 
-If you prefer, the package provides convenience classes as return types that simply extend Laravel's native relations:
+This package provides two classes that simply extend Laravel's native relations:
 
 - `LaravelPivotRelationsEagerLoading\Relations\BelongsToMany` (extends `Illuminate\Database\Eloquent\Relations\BelongsToMany`)
 - `LaravelPivotRelationsEagerLoading\Relations\MorphToMany` (extends `Illuminate\Database\Eloquent\Relations\MorphToMany`)
 
 Using them is optional; the trait works fine with the native Illuminate types shown in the examples above.
-
-## Available Methods
-
-### Trait Methods
-
-| Method | Description |
-|--------|-------------|
-| `belongsToMany()` | Creates a `BelongsToMany` relationship with pivot eager loading support |
-| `morphToMany()` | Creates a `MorphToMany` relationship with pivot eager loading support |
-| `morphedByMany()` | Creates an inverse `MorphToMany` relationship with pivot eager loading support |
-
-### Relationship Methods
-
-| Method | Description |
-|--------|-------------|
-| `withPivotRelations(array\|string $relations)` | Specify relationships to eager load on the pivot model |
-
-## Multiple Pivot Relations
-
-You can eager load multiple pivot relationships:
-
-```php
-return $this->belongsToMany(Skill::class)
-    ->using(UserSkill::class)
-    ->withPivot(['scale_id', 'certified_by'])
-    ->withPivotRelations(['scale', 'certifier']);
-```
 
 ## Testing
 
