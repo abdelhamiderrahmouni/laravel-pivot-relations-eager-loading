@@ -10,4 +10,5 @@ All notable changes to this project will be documented in this file.
 
 ### Chores
 
+- release ([5cc4b2d](https://github.com/abdelhamiderrahmouni/laravel-pivot-relations-eager-loading/commit/5cc4b2db8267ea9e451ac482498a48283a7de34c))
 - release ([37d20f2](https://github.com/abdelhamiderrahmouni/laravel-pivot-relations-eager-loading/commit/37d20f238d62e678419db6e7316d3e914fa4a528))
