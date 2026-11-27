@@ -34,6 +34,15 @@ class User extends Model
             ->withPivotRelations('creator');
     }
 
+    public function rolesWithChaperone()
+    {
+        return $this->belongsToMany(Role::class, 'role_user')
+            ->using(RoleUser::class)
+            ->withPivot('created_by')
+            ->withPivotRelations('creator')
+            ->chaperone();
+    }
+
     public function rolesAliased()
     {
         return $this->belongsToMany(Role::class, 'role_user')

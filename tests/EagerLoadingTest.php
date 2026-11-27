@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\DB;
 use LaravelPivotRelationsEagerLoading\Tests\Fixtures\Role;
 use LaravelPivotRelationsEagerLoading\Tests\Fixtures\Tag;
@@ -252,4 +253,36 @@ it('supports custom alias via ->as() for pivot.* syntax', function () {
     $pivot = $loadedUser->rolesAliased->first()->meta; // alias is respected
     expect($pivot->relationLoaded('creator'))->toBeTrue()
         ->and($pivot->creator->id)->toBe($creator->id);
+});
+
+it('eager loads pivot relations alongside chaperone()', function () {
+    if (! method_exists(BelongsToMany::class, 'chaperone')) {
+        $this->markTestSkipped('chaperone() on BelongsToMany requires Laravel 13.31+.');
+    }
+
+    $creator = User::create(['name' => 'Creator']);
+    $user = User::create(['name' => 'User']);
+    $role = Role::create(['name' => 'Admin']);
+
+    $user->rolesWithChaperone()->attach($role, ['created_by' => $creator->id]);
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    $loadedUser = User::with('rolesWithChaperone')->find($user->id);
+
+    $queries = DB::getQueryLog();
+    // 1. Select user
+    // 2. Select roles (pivot join)
+    // 3. Select creators (eager loaded from pivot)
+    expect(count($queries))->toBe(3);
+
+    $pivot = $loadedUser->rolesWithChaperone->first()->pivot;
+
+    expect($pivot->relationLoaded('creator'))->toBeTrue()
+        ->and($pivot->creator->id)->toBe($creator->id)
+        ->and($pivot->relationLoaded('user'))->toBeTrue()
+        ->and($pivot->user->id)->toBe($user->id)
+        ->and($pivot->relationLoaded('role'))->toBeTrue()
+        ->and($pivot->role->id)->toBe($role->id);
 });

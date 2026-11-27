@@ -22,6 +22,9 @@ class MorphToMany extends BaseMorphToMany
         return $this;
     }
 
+    /**
+     * @param  array<int, string>  $columns
+     */
     public function get($columns = ['*'])
     {
         $pivotEagerLoad = $this->extractPivotEagerLoads();
@@ -48,7 +51,7 @@ class MorphToMany extends BaseMorphToMany
             return parent::chunk($count, $callback);
         }
 
-        return parent::chunk($count, function ($results) use ($callback, $pivotEagerLoad) {
+        return parent::chunk($count, function ($results, $page) use ($callback, $pivotEagerLoad) {
             if (! empty($pivotEagerLoad)) {
                 $this->eagerLoadPivotRelations($results, $pivotEagerLoad);
             }
@@ -57,7 +60,7 @@ class MorphToMany extends BaseMorphToMany
                 $this->loadPivotRelationsOnModels($results);
             }
 
-            return $callback($results);
+            return $callback($results, $page);
         });
     }
 
@@ -83,7 +86,7 @@ class MorphToMany extends BaseMorphToMany
                 $this->loadPivotRelationsOnModels($models);
             }
 
-            return $models;
+            return $models->all();
         });
     }
 
@@ -111,7 +114,7 @@ class MorphToMany extends BaseMorphToMany
                 $this->loadPivotRelationsOnModels($models);
             }
 
-            return $models;
+            return $models->all();
         });
     }
 

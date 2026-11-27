@@ -22,6 +22,9 @@ class BelongsToMany extends BaseBelongsToMany
         return $this;
     }
 
+    /**
+     * @param  array<int, string>  $columns
+     */
     public function get($columns = ['*'])
     {
         // Extract any pivot.* (or alias.*) eager loads from the relation builder
@@ -53,7 +56,7 @@ class BelongsToMany extends BaseBelongsToMany
             return parent::chunk($count, $callback);
         }
 
-        return parent::chunk($count, function ($results) use ($callback, $pivotEagerLoad) {
+        return parent::chunk($count, function ($results, $page) use ($callback, $pivotEagerLoad) {
             if (! empty($pivotEagerLoad)) {
                 $this->eagerLoadPivotRelations($results, $pivotEagerLoad);
             }
@@ -62,7 +65,7 @@ class BelongsToMany extends BaseBelongsToMany
                 $this->loadPivotRelationsOnModels($results);
             }
 
-            return $callback($results);
+            return $callback($results, $page);
         });
     }
 
@@ -89,7 +92,7 @@ class BelongsToMany extends BaseBelongsToMany
                 $this->loadPivotRelationsOnModels($models);
             }
 
-            return $models;
+            return $models->all();
         });
     }
 
@@ -118,7 +121,7 @@ class BelongsToMany extends BaseBelongsToMany
                 $this->loadPivotRelationsOnModels($models);
             }
 
-            return $models;
+            return $models->all();
         });
     }
 

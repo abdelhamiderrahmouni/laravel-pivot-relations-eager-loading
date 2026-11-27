@@ -28,6 +28,11 @@ This package supports the `get()`, `lazy()`, `cursor()`, and `chunk()` methods.
 composer require abdelhamiderrahmouni/laravel-pivot-relations-eager-loading
 ```
 
+## Requirements
+
+- PHP 8.2 or higher (Laravel 13 requires PHP 8.3 or higher)
+- Laravel 12.x or 13.x
+
 ## Usage
 
 ### 1. Create a Custom Pivot Model
@@ -174,6 +179,7 @@ public function posts(): MorphToMany
 ## Notes:
 - The package automatically detects and strips `pivot.*` (or `alias.*`) from the relation eager-loads and loads those relations on the pivot models. This avoids `RelationNotFoundException` on the related model.
 - You can use `withPivotRelations([...])` if you prefer an explicit API; both forms are supported and can be combined.
+- Laravel 13.31+ includes `chaperone()` for hydrating the declaring and related models on pivot models. It complements this package: use `chaperone()` for those back-references and `withPivotRelations()` or `pivot.*` for any other pivot relations.
 
 ## Available Classes
 

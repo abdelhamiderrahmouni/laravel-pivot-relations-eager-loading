@@ -15,7 +15,7 @@ trait WithPivotRelationsLoading
      * Instantiate a new BelongsToMany relationship, returning the package's
      * custom relation that supports eager loading of pivot relations.
      *
-     * @param  string|class-string<\Illuminate\Database\Eloquent\Model>  $table
+     * @param  string|class-string<Model>  $table
      * @param  string  $foreignPivotKey
      * @param  string  $relatedPivotKey
      * @param  string  $parentKey
